@@ -124,8 +124,7 @@ promete(rojo, inflacion(CotaInferior,CotaSuperior)):- CotaInferior<10, CotaSuper
 esPicante(Provincia):-	habitantesEn(Provincia,Poblacion), Poblacion > 1000000, findall(Partido,postulanteEn(Provincia, Partido),Partidos),
 						length(Partidos, CantidadPartidos), CantidadPartidos >1.
 						
-leGanaA(Candidato1, Candidato2, Provincia) :-	perteneceAPartido(Candidato1, Partido1), postulanteEn(Provincia, Partido1), perteneceAPartido(Candidato2, Partido2), Candidato1 \= Candidato2, 
-												intencionDeVotoEn(Provincia, Partido1, Intencion1), intencionDeVotoEn(Provincia, Partido2, Intencion2), Intencion1 > Intencion2.
+leGanaA(Candidato1, Candidato2, Provincia) :-	perteneceAPartido(Candidato1, Partido1), perteneceAPartido(Candidato2, Partido2), partidoGanaA(Partido1, Partido2, Provincia).
 
 esMasJoven(Candidato1,Candidato2):- candidato(Candidato1,Edad1), candidato(Candidato2,Edad2), Edad1 =< Edad2.
 
@@ -133,14 +132,13 @@ mismoPartido(Candidato1, Candidato2):- perteneceAPartido(Candidato1, Partido), p
 
 elMasJovenDePartido(Partido, Candidato):-  perteneceAPartido(Candidato, Partido), forall(perteneceAPartido(UnCandidato, Partido), esMasJoven(Candidato, UnCandidato)).
 
-mayorIntencion(Provincia,Partido1,Partido2):- intencionDeVotoEn(Provincia, Partido1, Intencion1), intencionDeVotoEn(Provincia, Partido2, Intencion2), Partido1 \= Partido2, Intencion1 > Intencion2.
-partidoGanaEnProvincia(Provincia, Partido) :-	intencionDeVotoEn(Provincia, Partido, IntencionPartidoEvaluado), postulanteEn(Provincia, UnPartido) , findall(Intencion, 
-												intencionDeVotoEn(Provincia, UnPartido, Intencion), ListaIntenciones), max_member(ListaIntenciones, VotosMaximo) ,	VotosMaximo = IntencionPartidoEvaluado.
+partidoGanaA(PartidoGanador, PartidoPerdedor, Provincia):-	intencionDeVotoEn(Provincia, PartidoGanador, IntencionGanador), 
+															intencionDeVotoEn(Provincia, PartidoPerdedor, IntencionPerdedor), IntencionGanador > IntencionPerdedor.
 
-/*ganaEnTodasPcias(Partido):- postulanteEn(Partido,Provincia), forall(postulanteEn(Partido,Provincia), partidoGanaEnProvincia(Partido,OtroPartido,Provincia)).
 
-elGranCandidato(Candidato):- perteneceAPartido(Candidato, Partido), elMasJovenDePartido(Partido, Candidato), ganaEnTodasPcias(Partido).*/	
-
+elGranCandidato(Candidato):-	perteneceAPartido(Candidato, Partido), postulanteEn(Partido, Provincia),elMasJovenDePartido(Partido, Candidato),
+								forall(perteneceAPartido(Candidato,Partido), leGanaA(Candidato, _, Provincia)).
+								
 ajusteConsultora(Partido, Provincia, VotosReales):- partidoGanaEnProvincia(Partido,Provincia), intencionDeVotoEn(Provincia, Partido, Intencion), VotosReales is Intencion * 0.80.
 ajusteConsultora(Partido, Provincia, VotosReales):- intencionDeVotoEn(Provincia, Partido, Intencion), VotosReales is Intencion * 1.05.
 
@@ -151,8 +149,10 @@ influenciaDePromesa(edilicio(jardin, Cantidad), Variacion):-    Variacion is Can
 influenciaDePromesa(edilicio(escuela, Cantidad), Variacion):-    Variacion is Cantidad * 0.1.
 influenciaDePromesa(edilicio(comisaria, Cantidad), Variacion):-  Cantidad = 200, Variacion is 2.
 influenciaDePromesa(edilicio(universidad, _), Variacion):-  Variacion is 0.
-influenciaDePromesa(edilicio(_, _), Variacion):-  Variacion is (-1).
+influenciaDePromesa(edilicio(_, _), -1).
 
-promedioDeCrecimiento(Partido, VariacionTotal):- promete(Partido,Promesa), findall(Variacion, influenciaDePromesa(Promesa,Variacion), Varaciones), sumlist(Varaciones, VariacionTotal).
+variacionPromesaPartido(Partido, Promesa, Variacion):- promete(Partido, Promesa), influenciaDePromesa(Promesa, Variacion).
+
+promedioDeCrecimiento(Partido, VariacionTotal):- promete(Partido, Promesa), findall(Variacion, variacionPromesaPartido(Partido, Promesa, Variacion), Varaciones), sumlist(Varaciones, VariacionTotal).
 
 
