@@ -116,43 +116,94 @@ promete(rojo, nuevosPuestosDeTrabajo(800000)).
 promete(amarillo, nuevosPuestosDeTrabajo(10000)).
 promete(azul, inflacion(2,4)).
 promete(amarillo, inflacion(1,15)).
-promete(rojo, inflacion(CotaInferior,CotaSuperior)):- CotaInferior<10, CotaSuperior >30, CotaInferior < CotaSuperior.
+promete(rojo, inflacion(10,30)).
 
 
 
 /*------------------------------------------------------------------------------------------*/
-esPicante(Provincia):-	habitantesEn(Provincia,Poblacion), Poblacion > 1000000, findall(Partido,postulanteEn(Provincia, Partido),Partidos),
-						length(Partidos, CantidadPartidos), CantidadPartidos >1.
+esMuyHabitada(Provincia):-	habitantesEn(Provincia,Poblacion),
+							Poblacion > 1000000.
+
+compitenVarios(Provincia):- findall(Partido,postulanteEn(Provincia, Partido),Partidos),
+							length(Partidos, CantidadPartidos),
+							CantidadPartidos >1.
 						
-leGanaA(Candidato1, Candidato2, Provincia) :-	perteneceAPartido(Candidato1, Partido1), perteneceAPartido(Candidato2, Partido2), partidoGanaA(Partido1, Partido2, Provincia).
-
-esMasJoven(Candidato1,Candidato2):- candidato(Candidato1,Edad1), candidato(Candidato2,Edad2), Edad1 =< Edad2.
-
-mismoPartido(Candidato1, Candidato2):- perteneceAPartido(Candidato1, Partido), perteneceAPartido(Candidato2, Partido), Candidato1 \= Candidato2.
-
-elMasJovenDePartido(Partido, Candidato):-  perteneceAPartido(Candidato, Partido), forall(perteneceAPartido(UnCandidato, Partido), esMasJoven(Candidato, UnCandidato)).
+esPicante(Provincia):-		esMuyHabitada(Provincia),
+							compitenVarios(Provincia).
+							
+mismoPartido(Candidato1, Candidato2, Partido):-		perteneceAPartido(Candidato1, Partido),
+													perteneceAPartido(Candidato2, Partido),
+													Candidato1 \= Candidato2.
 
 partidoGanaA(PartidoGanador, PartidoPerdedor, Provincia):-	intencionDeVotoEn(Provincia, PartidoGanador, IntencionGanador), 
-															intencionDeVotoEn(Provincia, PartidoPerdedor, IntencionPerdedor), IntencionGanador > IntencionPerdedor.
+															intencionDeVotoEn(Provincia, PartidoPerdedor, IntencionPerdedor),
+															IntencionGanador >= IntencionPerdedor.
+												
+candidatoEnProvincia(Candidato, Provincia, Partido):-	perteneceAPartido(Candidato, Partido), 
+														postulanteEn(Provincia, Partido).
+															
+leGanaA(Candidato1, Candidato2, Provincia) :- 	mismoPartido(Candidato1, Candidato2, Partido),
+												postulanteEn(Provincia,Partido).
+	
+leGanaA(Candidato1, Candidato2, Provincia) :-	candidatoEnProvincia(Candidato1, Provincia, Partido1),
+												candidatoEnProvincia(Candidato2, Provincia, Partido2),
+												partidoGanaA(Partido1, Partido2, Provincia).
+												
+
+esMasJoven(Candidato1,Candidato2):- candidato(Candidato1,Edad1),
+									candidato(Candidato2,Edad2),
+									Edad1 =< Edad2.
 
 
-elGranCandidato(Candidato):-	perteneceAPartido(Candidato, Partido), postulanteEn(Partido, Provincia),elMasJovenDePartido(Partido, Candidato),
-								forall(perteneceAPartido(Candidato,Partido), leGanaA(Candidato, _, Provincia)).
+
+elMasJovenDePartido(Partido, Candidato):-	perteneceAPartido(Candidato, Partido),
+											forall(perteneceAPartido(UnCandidato, Partido),
+											esMasJoven(Candidato, UnCandidato)).
+
+
+
+elGranCandidato(Candidato):-	elMasJovenDePartido(Partido, Candidato),
+								ganaEnTodasPcias(Partido).
+
+/*no se como hacer andar esto de abajo bien, si pudiese se me resuelve todo creo yo*/
+ganadorEnProvincia(Provincia, PartidoGanador):- findall(Intencion, intencionDeVotoEn(Provincia, _, Intencion), Intenciones),
+												intencionDeVotoEn(Provincia, PartidoGanador, IntencionGanador),
+												max_member(Intenciones, IntencionGanador).
+
+ganaEnTodasPcias(Partido):- forall(postulanteEn(Provincia,Partido),
+							ganadorEnProvincia(Provincia, Partido)).
+							
 								
-ajusteConsultora(Partido, Provincia, VotosReales):- partidoGanaEnProvincia(Partido,Provincia), intencionDeVotoEn(Provincia, Partido, Intencion), VotosReales is Intencion * 0.80.
-ajusteConsultora(Partido, Provincia, VotosReales):- intencionDeVotoEn(Provincia, Partido, Intencion), VotosReales is Intencion * 1.05.
+ajusteConsultora(Partido, Provincia, VotosReales):- partidoGanaA(Partido,_,Provincia),
+													intencionDeVotoEn(Provincia, Partido, Intencion),
+													VotosReales is Intencion - 20.
+ajusteConsultora(Partido, Provincia, VotosReales):- intencionDeVotoEn(Provincia, Partido, Intencion),
+													VotosReales is Intencion + 5.
 
 influenciaDePromesa(inflacion(CotaInferior,CotaSuperior), Variacion):- Variacion is (0-(CotaInferior + CotaSuperior)/2).
 influenciaDePromesa(nuevosPuestosDeTrabajo(PuestosNuevos), Variacion):- PuestosNuevos > 50000, Variacion is 3.
-influenciaDePromesa(edilicio(hospital, _), Variacion):- Variacion is 2.
+influenciaDePromesa(nuevosPuestosDeTrabajo(_), 0).
+influenciaDePromesa(edilicio(hospital, _), 2).
 influenciaDePromesa(edilicio(jardin, Cantidad), Variacion):-    Variacion is Cantidad * 0.1.
 influenciaDePromesa(edilicio(escuela, Cantidad), Variacion):-    Variacion is Cantidad * 0.1.
-influenciaDePromesa(edilicio(comisaria, Cantidad), Variacion):-  Cantidad = 200, Variacion is 2.
-influenciaDePromesa(edilicio(universidad, _), Variacion):-  Variacion is 0.
-influenciaDePromesa(edilicio(_, _), -1).
+influenciaDePromesa(edilicio(comisaria, 200), 2).
+influenciaDePromesa(edilicio(universidad, _), 0).
 
-variacionPromesaPartido(Partido, Promesa, Variacion):- promete(Partido, Promesa), influenciaDePromesa(Promesa, Variacion).
+/* pedro, este "or" es asi?  quiero decirle que no sea ningun caso anterior para que no entre dos veces cuando sea, por ejemplo, hospital, porque me afecta a otros
+resultados que necesitan tomar todas las promesas*/ 
 
-promedioDeCrecimiento(Partido, VariacionTotal):- promete(Partido, Promesa), findall(Variacion, variacionPromesaPartido(Partido, Promesa, Variacion), Varaciones), sumlist(Varaciones, VariacionTotal).
+influenciaDePromesa(edilicio(Edificio, _), -1):-	Edificio \= hospital,
+													Edificio \= jardin,
+													Edificio \= escuela,
+													Edificio \= comisaria,
+													Edificio \= universidad.
+
+variacionPromesaPartido(Partido, Promesa, Variacion):-	promete(Partido, Promesa),
+														influenciaDePromesa(Promesa, Variacion).
+														
+/* este no me queda completamente inversible, que asume que es por el findall, pero aclaro por las dudas, en este caso es solamente inversible con el segundo argumento*/
+promedioDeCrecimiento(Partido, VariacionTotal):-	findall(Variacion, variacionPromesaPartido(Partido,_, Variacion), Variaciones),
+													sumlist(Variaciones, VariacionTotal).
 
 
+ 
