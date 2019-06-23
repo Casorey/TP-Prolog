@@ -1,4 +1,8 @@
 /* Base de datos*/
+partido(rojo).
+partido(azul).
+partido(amarillo).
+partido(violeta).
 
 candidato(frank, 50).
 candidato(claire, 52).
@@ -181,7 +185,7 @@ ajusteConsultora(Partido, Provincia, VotosReales):- intencionDeVotoEn(Provincia,
 													VotosReales is Intencion + 5.
 
 influenciaDePromesa(inflacion(CotaInferior,CotaSuperior), Variacion):- Variacion is (0-(CotaInferior + CotaSuperior)/2).
-influenciaDePromesa(nuevosPuestosDeTrabajo(PuestosNuevos), Variacion):- PuestosNuevos > 50000, Variacion is 3.
+influenciaDePromesa(nuevosPuestosDeTrabajo(PuestosNuevos), 3):- PuestosNuevos > 50000.
 influenciaDePromesa(nuevosPuestosDeTrabajo(_), 0).
 influenciaDePromesa(edilicio(hospital, _), 2).
 influenciaDePromesa(edilicio(jardin, Cantidad), Variacion):-    Variacion is Cantidad * 0.1.
@@ -202,7 +206,8 @@ variacionPromesaPartido(Partido, Promesa, Variacion):-	promete(Partido, Promesa)
 														influenciaDePromesa(Promesa, Variacion).
 														
 /* este no me queda completamente inversible, que asume que es por el findall, pero aclaro por las dudas, en este caso es solamente inversible con el segundo argumento*/
-promedioDeCrecimiento(Partido, VariacionTotal):-	findall(Variacion, variacionPromesaPartido(Partido,_, Variacion), Variaciones),
+promedioDeCrecimiento(Partido, VariacionTotal):-	partido(Partido),
+													findall(Variacion, variacionPromesaPartido(Partido,_, Variacion), Variaciones),
 													sumlist(Variaciones, VariacionTotal).
 
 
