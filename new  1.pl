@@ -146,13 +146,15 @@ partidoGanaA(PartidoGanador, PartidoPerdedor, Provincia):-	intencionDeVotoEn(Pro
 candidatoEnProvincia(Candidato, Provincia, Partido):-	perteneceAPartido(Candidato, Partido), 
 														postulanteEn(Provincia, Partido).
 															
-leGanaA(Candidato1, Candidato2, Provincia) :- 	mismoPartido(Candidato1, Candidato2, Partido),
+leGanaA(Candidato1, Candidato2, Provincia):-	mismoPartido(Candidato1, Candidato2, Partido),
 												postulanteEn(Provincia,Partido).
 	
-leGanaA(Candidato1, Candidato2, Provincia) :-	candidatoEnProvincia(Candidato1, Provincia, Partido1),
-												candidatoEnProvincia(Candidato2, Provincia, Partido2),
-												partidoGanaA(Partido1, Partido2, Provincia).
+leGanaA(Candidato1, Candidato2, Provincia):-	intencionCandidato(Candidato1, Intencion1, Provincia),
+												intencionCandidato(Candidato2, Intencion2, Provincia),
+												Intencion1 > Intencion2.
 												
+intencionCandidato(Candidato, Intencion, Provincia):-	perteneceAPartido(Candidato, Partido),
+														intencionDeVotoEn(Provincia, Partido, Intencion).
 
 esMasJoven(Candidato1,Candidato2):- candidato(Candidato1,Edad1),
 									candidato(Candidato2,Edad2),
@@ -166,17 +168,16 @@ elMasJovenDePartido(Partido, Candidato):-	perteneceAPartido(Candidato, Partido),
 
 
 
-elGranCandidato(Candidato):-	elMasJovenDePartido(Partido, Candidato),
-								ganaEnTodasPcias(Partido).
+elGranCandidato(Candidato):-	elMasJovenDePartido(_, Candidato),
+								ganaEnTodasPcias(Candidato).
 
-/*no se como hacer andar esto de abajo bien, si pudiese se me resuelve todo creo yo*/
-ganadorEnProvincia(Provincia, PartidoGanador):- findall(Intencion, intencionDeVotoEn(Provincia, _, Intencion), Intenciones),
-												intencionDeVotoEn(Provincia, PartidoGanador, IntencionGanador),
-												max_member(Intenciones, IntencionGanador).
 
-ganaEnTodasPcias(Partido):- forall(postulanteEn(Provincia,Partido),
-							ganadorEnProvincia(Provincia, Partido)).
-							
+ganaLaProvincia(Provincia, Partido):-	intencionCandidato(Provincia, Partido, IntencionGanador),
+										findall(Intencion, intencionDeVotoEn(Provincia, _, Intencion), Intenciones),
+										max_member(IntencionGanador, Intenciones).
+										
+ganaEnTodasPcias(Candidato):- 	perteneceAPartido(Candidato,Partido),	
+								forall(ganaLaProvincia(Provincia, Candidato), postulanteEn(Provincia, Partido)).
 								
 ajusteConsultora(Partido, Provincia, VotosReales):- partidoGanaA(Partido,_,Provincia),
 													intencionDeVotoEn(Provincia, Partido, Intencion),
@@ -192,10 +193,6 @@ influenciaDePromesa(edilicio(jardin, Cantidad), Variacion):-    Variacion is Can
 influenciaDePromesa(edilicio(escuela, Cantidad), Variacion):-    Variacion is Cantidad * 0.1.
 influenciaDePromesa(edilicio(comisaria, 200), 2).
 influenciaDePromesa(edilicio(universidad, _), 0).
-
-/* pedro, este "or" es asi?  quiero decirle que no sea ningun caso anterior para que no entre dos veces cuando sea, por ejemplo, hospital, porque me afecta a otros
-resultados que necesitan tomar todas las promesas*/ 
-
 influenciaDePromesa(edilicio(Edificio, _), -1):-	Edificio \= hospital,
 													Edificio \= jardin,
 													Edificio \= escuela,
@@ -204,8 +201,8 @@ influenciaDePromesa(edilicio(Edificio, _), -1):-	Edificio \= hospital,
 
 variacionPromesaPartido(Partido, Promesa, Variacion):-	promete(Partido, Promesa),
 														influenciaDePromesa(Promesa, Variacion).
+
 														
-/* este no me queda completamente inversible, que asume que es por el findall, pero aclaro por las dudas, en este caso es solamente inversible con el segundo argumento*/
 promedioDeCrecimiento(Partido, VariacionTotal):-	partido(Partido),
 													findall(Variacion, variacionPromesaPartido(Partido,_, Variacion), Variaciones),
 													sumlist(Variaciones, VariacionTotal).
