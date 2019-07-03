@@ -143,7 +143,7 @@ partidoGanaA(PartidoGanador, PartidoPerdedor, Provincia):-	intencionDeVotoEn(Pro
 															intencionDeVotoEn(Provincia, PartidoPerdedor, IntencionPerdedor),
 															IntencionGanador >= IntencionPerdedor.
 												
-candidatoEnProvincia(Candidato, Provincia, Partido):-	perteneceAPartido(Candidato, Partido), 
+candidatoEnProvincia(Candidato, Provincia):-	perteneceAPartido(Candidato, Partido), 
 														postulanteEn(Provincia, Partido).
 															
 leGanaA(Candidato1, Candidato2, Provincia):-	mismoPartido(Candidato1, Candidato2, Partido),
@@ -172,12 +172,12 @@ elGranCandidato(Candidato):-	elMasJovenDePartido(_, Candidato),
 								ganaEnTodasPcias(Candidato).
 
 
-ganaLaProvincia(Provincia, Partido):-	intencionCandidato(Provincia, Partido, IntencionGanador),
-										findall(Intencion, intencionDeVotoEn(Provincia, _, Intencion), Intenciones),
-										max_member(IntencionGanador, Intenciones).
+ganaLaProvincia(Provincia, Candidato):-	candidato(Candidato,_),
+										forall(candidatoEnProvincia(Candidato, Provincia), leGanaA( Candidato, _, Provincia)).
 										
-ganaEnTodasPcias(Candidato):- 	perteneceAPartido(Candidato,Partido),	
-								forall(ganaLaProvincia(Provincia, Candidato), postulanteEn(Provincia, Partido)).
+
+ganaEnTodasPcias(Candidato):- 	perteneceAPartido(Candidato, _),	
+								forall(candidatoEnProvincia(Provincia, Candidato), ganaLaProvincia(Provincia, Candidato)).
 								
 ajusteConsultora(Partido, Provincia, VotosReales):- partidoGanaA(Partido,_,Provincia),
 													intencionDeVotoEn(Provincia, Partido, Intencion),
