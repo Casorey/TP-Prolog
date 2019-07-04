@@ -144,14 +144,17 @@ partidoGanaA(PartidoGanador, PartidoPerdedor, Provincia):-	intencionDeVotoEn(Pro
 															IntencionGanador >= IntencionPerdedor.
 												
 candidatoEnProvincia(Candidato, Provincia):-	perteneceAPartido(Candidato, Partido), 
-														postulanteEn(Provincia, Partido).
-															
+												postulanteEn(Provincia, Partido).
+
 leGanaA(Candidato1, Candidato2, Provincia):-	mismoPartido(Candidato1, Candidato2, Partido),
 												postulanteEn(Provincia,Partido).
-	
-leGanaA(Candidato1, Candidato2, Provincia):-	intencionCandidato(Candidato1, Intencion1, Provincia),
+											
+												
+leGanaA(Candidato1, Candidato2, Provincia):-	candidatoEnProvincia(Provincia,Candidato1),
+												intencionCandidato(Candidato1, Intencion1, Provincia),
 												intencionCandidato(Candidato2, Intencion2, Provincia),
 												Intencion1 > Intencion2.
+
 												
 intencionCandidato(Candidato, Intencion, Provincia):-	perteneceAPartido(Candidato, Partido),
 														intencionDeVotoEn(Provincia, Partido, Intencion).
@@ -170,14 +173,15 @@ elMasJovenDePartido(Partido, Candidato):-	perteneceAPartido(Candidato, Partido),
 
 elGranCandidato(Candidato):-	elMasJovenDePartido(_, Candidato),
 								ganaEnTodasPcias(Candidato).
+								
+compitenEnProvincia(Candidato1, Candidato2, Provincia):-	candidatoEnProvincia(Candidato1, Provincia),
+															candidatoEnProvincia(Candidato2, Provincia).
 
-
-ganaLaProvincia(Provincia, Candidato):-	candidato(Candidato,_),
-										forall(candidatoEnProvincia(Candidato, Provincia), leGanaA( Candidato, _, Provincia)).
+ganaLaProvincia(Provincia, CandidatoGanador):-	leGanaA(CandidatoGanador, _, Provincia).
 										
 
-ganaEnTodasPcias(Candidato):- 	perteneceAPartido(Candidato, _),	
-								forall(candidatoEnProvincia(Provincia, Candidato), ganaLaProvincia(Provincia, Candidato)).
+ganaEnTodasPcias(Candidato):- 	candidato(Candidato,_),	
+								forall(candidatoEnProvincia(Candidato, Provincia), ganaLaProvincia(Provincia, Candidato)).
 								
 ajusteConsultora(Partido, Provincia, VotosReales):- partidoGanaA(Partido,_,Provincia),
 													intencionDeVotoEn(Provincia, Partido, Intencion),
